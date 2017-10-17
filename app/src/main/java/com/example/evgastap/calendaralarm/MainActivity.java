@@ -10,5 +10,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //if you synced with git you should see this asdf
+        //second comment for testing
+
     }
 }
