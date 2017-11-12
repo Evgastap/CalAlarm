@@ -1,11 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
     <Button
         android:id="@+id/button_GetEvents"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Get Events" />
+
+    <com.michaelmuenzer.android.scrollablennumberpicker.ScrollableNumberPicker
+        android:id="@+id/snp_horizontal"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:background="@drawable/number_picker_bg"
+        android:gravity="center_vertical|center_horizontal"
+        app:snp_buttonIconLeft="@drawable/ic_left"
+        app:snp_buttonIconRight="@drawable/ic_right"
+        app:snp_maxValue="60"
+        app:snp_minValue="0"
+        app:snp_orientation="horizontal"
+        app:snp_stepSize="5"
+        app:snp_updateInterval="10"
+        app:snp_value="10"
+        app:snp_valueMarginEnd="8dp"
+        app:snp_valueMarginStart="8dp" />
+
 </LinearLayout>

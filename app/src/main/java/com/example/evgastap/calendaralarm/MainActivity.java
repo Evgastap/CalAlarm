@@ -6,6 +6,8 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.services.calendar.model.CalendarList;
+import com.google.api.services.calendar.model.CalendarListEntry;
 
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -16,12 +18,16 @@ import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.client.util.DateTime;
 
 import com.google.api.services.calendar.model.*;
+import com.michaelmuenzer.android.scrollablennumberpicker.ScrollableNumberPicker;
 
 import android.Manifest;
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
@@ -29,12 +35,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.icu.text.DateFormat;
 import android.icu.text.RelativeDateTimeFormatter;
+import android.icu.text.SimpleDateFormat;
 import android.icu.util.Output;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -49,6 +57,7 @@ import android.widget.TimePicker;
 import java.io.IOException;
 import java.util.*;
 import java.util.Calendar;
+
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -70,6 +79,10 @@ public class MainActivity extends Activity
 
     int year, month, dayOfMonth, hourOfDay, minute;
     int yearFinal, monthFinal, dayOfMonthFinal, hourOfDayFinal, minuteFinal;
+
+    String finalTime;
+    long subtractTime = 5400000;
+    ScrollableNumberPicker scrollableNumberPicker;
 
     private static final String BUTTON_TEXT = "Call Google Calendar API";
     private static final String PREF_ACCOUNT_NAME = "accountName";
@@ -110,24 +123,18 @@ public class MainActivity extends Activity
         mDateTimeButton = new Button(this);
         mDateTimeButton.setText("Pick DateTime");
         mDateTimeButton.setOnClickListener(new View.OnClickListener() {
-                                               @Override
-                                               public void onClick(View v) {
-                                                   mDateTimeButton.setEnabled(false);
-                                                   //Calendar c = java.util.Calendar.getInstance();
-                                                   /*year = c.get(Calendar.YEAR);
-                                                   month = c.get(Calendar.MONTH);
-                                                   dayOfMonth = c.get(Calendar.DAY_OF_MONTH);
-                                                   DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this, MainActivity.this, year, month, dayOfMonth);
-                                                   datePickerDialog.show();*/
-                                                   Calendar c = Calendar.getInstance();
-                                                   hourOfDay = c.get(Calendar.HOUR_OF_DAY);
-                                                   minute = c.get(Calendar.MINUTE);
+         @Override
+         public void onClick(View v) {
+            mDateTimeButton.setEnabled(false);
+            Calendar c = Calendar.getInstance();
+            hourOfDay = c.get(Calendar.HOUR_OF_DAY);
+            minute = c.get(Calendar.MINUTE);
+            TimePickerDialog timePickerDialog = new TimePickerDialog(MainActivity.this,
+            MainActivity.this, hourOfDay, minute, true);
+            timePickerDialog.show();
+            }//onClick
 
-                                                   TimePickerDialog timePickerDialog = new TimePickerDialog(MainActivity.this,
-                                                           MainActivity.this, hourOfDay, minute, true);
-                                                   timePickerDialog.show();
-                                               }
-                                           });
+        });
         activityLayout.addView(mDateTimeButton);
 
         mDateTimeText = new TextView(this);
@@ -157,6 +164,8 @@ public class MainActivity extends Activity
         mCredential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
+
+        scrollableNumberPicker = (ScrollableNumberPicker)findViewById(R.id.snp_horizontal);
     }
 
 
@@ -315,6 +324,8 @@ public class MainActivity extends Activity
         return (networkInfo != null && networkInfo.isConnected());
     }
 
+
+
     /**
      * Check that Google Play services APK is installed and up to date.
      * @return true if Google Play Services is available and up to
@@ -377,22 +388,75 @@ public class MainActivity extends Activity
     }
 
     public DateTime setEarliest() {
-        Calendar calendar = Calendar.getInstance();
-        /*Date today = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);*/
-        calendar.get(Calendar.DATE);
-        calendar.roll(Calendar.DATE, 1);
-        calendar.set(Calendar.HOUR_OF_DAY, hourOfDayFinal);
-        calendar.set(Calendar.MINUTE, minuteFinal);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        Date earliest = calendar.getTime();
-        Log.d("date", earliest.toString());
-        DateTime earliestDT = new DateTime(earliest);
-        Log.d("datetime", earliestDT.toString());
-//        DateTime earliest = DateTime(tomorrowDT + 3600000)
-//        DateTime earliest = DateTime.parseRfc3339(yearFinal + "-" + monthFinal + "-" + dayOfMonthFinal + "-" + "T" + hourOfDayFinal + "-" + minuteFinal);
-        return earliestDT;
+    Calendar calendar = Calendar.getInstance();
+    calendar.get(Calendar.DATE);
+    calendar.roll(Calendar.DATE, 1);
+    calendar.set(Calendar.HOUR_OF_DAY, hourOfDayFinal);
+    calendar.set(Calendar.MINUTE, minuteFinal);
+    calendar.set(Calendar.SECOND, 0);
+    calendar.set(Calendar.MILLISECOND, 0);
+    Date earliest = calendar.getTime();
+    Log.d("earliest date", earliest.toString());
+    DateTime earliestDT = new DateTime(earliest);
+    Log.d("earliest datetime", earliestDT.toString());
+    return earliestDT;
+    }
+
+    public DateTime setLatest() {
+    Calendar calendar = Calendar.getInstance();
+    /*Date today = calendar.getTime();
+    calendar.add(Calendar.DAY_OF_YEAR, 1);*/
+    calendar.get(Calendar.DATE);
+    calendar.roll(Calendar.DATE, 1);
+    calendar.set(Calendar.HOUR_OF_DAY, 12);
+    calendar.set(Calendar.MINUTE, 0);
+    calendar.set(Calendar.SECOND, 0);
+    calendar.set(Calendar.MILLISECOND, 0);
+    Date latest = calendar.getTime();
+    Log.d("latest date", latest.toString());
+    DateTime latestDT = new DateTime(latest);
+    Log.d("latest datetime", latestDT.toString());
+    return latestDT;
+    }
+
+    public void startAlarm() {
+        //start up alarm manager
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        //set date from the finalTime gotten from calendar, subtract a certain amount
+        Date wakeUp = new Date(new DateTime(finalTime).getValue() - subtractTime);
+        Log.d("final time", wakeUp.toString());
+        Log.d("date.gettime", String.valueOf(wakeUp.getTime()));
+
+        //start intent
+        Context context = this;
+        Intent myIntent = new Intent(context, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, myIntent, 0);
+        manager.set(AlarmManager.RTC_WAKEUP,wakeUp.getTime(), pendingIntent);
+        sendNotification();
+    }
+
+    public void sendNotification () {
+        //sends notifications with time for alarm
+//        DateTime finalDT = new DateTime(finalTime);
+        Date finalDate = new Date(new DateTime(finalTime).getValue() - subtractTime);
+        Log.d("finaldate", finalDate.toString());
+        String hours = String.valueOf(finalDate.getHours());
+        Log.d("hours", hours);
+        String minutes = String.valueOf(finalDate.getMinutes());
+        if (minutes.length() == 1) {
+            minutes = "0" + minutes;
+        }
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+            .setContentTitle("Alarm set")
+            .setContentText("An alarm has been set for " + hours + ":" + minutes)
+                .setDefaults(-1)
+            .setSmallIcon(R.drawable.common_google_signin_btn_text_light);
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(contentIntent);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.notify(0, mBuilder.build());
     }
 
 
@@ -434,42 +498,51 @@ public class MainActivity extends Activity
          * @throws IOException
          */
         private List<String> getDataFromApi() throws IOException {
-            // List the next 10 events from the primary calendar.
-            DateTime now = new DateTime(System.currentTimeMillis());
-            DateTime tomorrow = new DateTime(System.currentTimeMillis() + 86400000);
+            //get all calendar ids
+            String pageToken = null;
+            CalendarList calendarList = mService.calendarList().list().setPageToken(pageToken).execute();
+            List<CalendarListEntry> items2 = calendarList.getItems();
+            List<String> calendarIDs = new ArrayList<>();
+            for (CalendarListEntry calendarListEntry : items2) {
+                String calId = calendarListEntry.getId();
+                calendarIDs.add(calId);
+            }//for
+            Log.d("calendarids", calendarIDs.toString());
+
+            // List the next 10 events from the given calendar.
             List<String> eventStrings = new ArrayList<>();
-            Events events = mService.events().list("primary")
-                    .setMaxResults(10)
-                    .setTimeMin(setEarliest())
-//                    .setTimeMax(tomorrow)
-                    .setOrderBy("startTime")
-                    .setSingleEvents(true)
-                    .execute();
-            List<Event> items = events.getItems();
+            for (String ids : calendarIDs) {
+                Log.d("someids", ids);
+                Events events = mService.events().list(ids)
+                        .setMaxResults(10)
+                        .setTimeMin(setEarliest())
+                        .setTimeMax(setLatest())
+                        .setOrderBy("startTime")
+                        .setSingleEvents(true)
+                        .execute();
+                List<Event> items = events.getItems();
 
-            for (Event event : items) {
-                DateTime start = event.getStart().getDateTime();
-                if (start == null) {
-                    // All-day events don't have start times, so just use
-                    // the start date.
-                    start = event.getStart().getDate();
-                }
+                for (Event event : items) {
+                    DateTime start = event.getStart().getDateTime();
+                    if (start == null) {
+                        // All-day events don't have start times, so just use
+                        // the start date.
+                        start = event.getStart().getDate();
+                    }
 
-                if (/**start.toString().equals("2017-10-23T21:00:00.000+02:00")**/ 1==1) {
-                    eventStrings.add(
-                    String.format("%s", start));
-                }
-            }
+                    eventStrings.add(String.format("%s", start));
+                }//for
+
+            }//bigfor
+
+            Log.d("eventstrings", eventStrings.toString());
+
             Collections.sort(eventStrings);
 
-            /*String[] arrayDates = eventStrings.toArray(new String[eventStrings.size()]);
-            eventStrings.toArray(arrayDates);
-            Arrays.sort(arrayDates);
-            Log.d("myTag", arrayDates.toString());
-            return eventStrings;
-            //return Arrays.asList(arrayDates);
-            //mOutputText.setText(arrayDates.toString());*/
             List<String> returnValue = new ArrayList<>(Arrays.asList(eventStrings.get(0)));
+            Log.d("return value", returnValue.toString());
+            finalTime = returnValue.get(0).toString();
+            startAlarm();
             return returnValue;
 
         }
