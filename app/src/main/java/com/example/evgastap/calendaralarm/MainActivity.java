@@ -22,6 +22,7 @@ import com.michaelmuenzer.android.scrollablennumberpicker.ScrollableNumberPicker
 
 import android.Manifest;
 import android.accounts.AccountManager;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
@@ -54,6 +55,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
+import org.w3c.dom.Text;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.Calendar;
@@ -66,10 +69,6 @@ public class MainActivity extends Activity
         implements EasyPermissions.PermissionCallbacks, DatePickerDialog.OnDateSetListener, TimePickerDialog.OnTimeSetListener
 {
     GoogleAccountCredential mCredential;
-    private TextView mOutputText;
-    private TextView mDateTimeText;
-    private Button mCallApiButton;
-    private Button mDateTimeButton;
     ProgressDialog mProgress;
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
@@ -77,14 +76,13 @@ public class MainActivity extends Activity
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
 
-    int year, month, dayOfMonth, hourOfDay, minute;
+    int hourOfDay, minute;
     int yearFinal, monthFinal, dayOfMonthFinal, hourOfDayFinal, minuteFinal;
 
     String finalTime;
     long subtractTime = 5400000;
-    ScrollableNumberPicker scrollableNumberPicker;
+    ScrollableNumberPicker scrollableNumberPicker, scrollableNumberPicker2;
 
-    private static final String BUTTON_TEXT = "Call Google Calendar API";
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = { CalendarScopes.CALENDAR_READONLY };
 
@@ -92,23 +90,16 @@ public class MainActivity extends Activity
      * Create the main activity.
      * @param savedInstanceState previously saved instance data.
      */
+    @SuppressLint("SetTextI18n")
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LinearLayout activityLayout = new LinearLayout(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT);
-        activityLayout.setLayoutParams(lp);
-        activityLayout.setOrientation(LinearLayout.VERTICAL);
-        activityLayout.setPadding(16, 16, 16, 16);
-
-        ViewGroup.LayoutParams tlp = new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        mCallApiButton = new Button(this);
-        mCallApiButton.setText(BUTTON_TEXT);
+        setContentView(R.layout.activity_main);
+        final TextView mOutputText, mDateTimeText;
+        mOutputText = (TextView) findViewById(R.id.textView1);
+        mDateTimeText = (TextView) findViewById(R.id.textView2);
+        final Button mCallApiButton;
+        mCallApiButton = (Button) findViewById(R.id.b_getEvents);
         mCallApiButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -118,9 +109,9 @@ public class MainActivity extends Activity
                 mCallApiButton.setEnabled(true);
             }
         });
-        activityLayout.addView(mCallApiButton);
 
-        mDateTimeButton = new Button(this);
+        final Button mDateTimeButton;
+        mDateTimeButton = (Button) findViewById(R.id.b_getDateTime);
         mDateTimeButton.setText("Pick DateTime");
         mDateTimeButton.setOnClickListener(new View.OnClickListener() {
          @Override
@@ -135,30 +126,9 @@ public class MainActivity extends Activity
             }//onClick
 
         });
-        activityLayout.addView(mDateTimeButton);
-
-        mDateTimeText = new TextView(this);
-        mDateTimeText.setLayoutParams(tlp);
-        mDateTimeText.setPadding(16, 16, 16, 16);
-        mDateTimeText.setVerticalScrollBarEnabled(true);
-        mDateTimeText.setMovementMethod(new ScrollingMovementMethod());
-        mDateTimeText.setText(
-                "DateTime will be shown here");
-        activityLayout.addView(mDateTimeText);
-
-        mOutputText = new TextView(this);
-        mOutputText.setLayoutParams(tlp);
-        mOutputText.setPadding(16, 16, 16, 16);
-        mOutputText.setVerticalScrollBarEnabled(true);
-        mOutputText.setMovementMethod(new ScrollingMovementMethod());
-        mOutputText.setText(
-                "Click the \'" + BUTTON_TEXT +"\' button to test the API.");
-        activityLayout.addView(mOutputText);
 
         mProgress = new ProgressDialog(this);
         mProgress.setMessage("Calling Google Calendar API ...");
-
-        setContentView(activityLayout);
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -166,6 +136,7 @@ public class MainActivity extends Activity
                 .setBackOff(new ExponentialBackOff());
 
         scrollableNumberPicker = (ScrollableNumberPicker)findViewById(R.id.snp_horizontal);
+        scrollableNumberPicker2 = (ScrollableNumberPicker)findViewById(R.id.snp_horizontal2);
     }
 
 
@@ -183,7 +154,7 @@ public class MainActivity extends Activity
         } else if (mCredential.getSelectedAccountName() == null) {
             chooseAccount();
         } else if (! isDeviceOnline()) {
-            mOutputText.setText("No network connection available.");
+            ((TextView)findViewById(R.id.textView1)).setText("No network connection available.");
         } else {
             new MakeRequestTask(mCredential).execute();
         }
@@ -241,7 +212,7 @@ public class MainActivity extends Activity
         switch(requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode != RESULT_OK) {
-                    mOutputText.setText(
+                    ((TextView)findViewById(R.id.textView1)).setText(
                             "This app requires Google Play Services. Please install " +
                                     "Google Play Services on your device and relaunch this app.");
                 } else {
@@ -320,6 +291,7 @@ public class MainActivity extends Activity
     private boolean isDeviceOnline() {
         ConnectivityManager connMgr =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        assert connMgr != null;
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return (networkInfo != null && networkInfo.isConnected());
     }
@@ -382,17 +354,24 @@ public class MainActivity extends Activity
     public void onTimeSet(TimePicker view, int i, int i1) {
         hourOfDayFinal = i;
         minuteFinal = i1;
-        mDateTimeText.setText(/*yearFinal + " " + monthFinal + " " + dayOfMonthFinal + " " + */hourOfDayFinal + " " + minuteFinal);
-
-
+        String minuteFinalString = null;
+        if (minuteFinal < 10) {
+            minuteFinalString = "0" + String.valueOf(minuteFinal);
+        }
+        ((TextView) findViewById(R.id.textView2)).setText(
+                "The earliest you will be woken up is: " + hourOfDayFinal + ":" + minuteFinalString);
     }
 
     public DateTime setEarliest() {
     Calendar calendar = Calendar.getInstance();
     calendar.get(Calendar.DATE);
-    calendar.roll(Calendar.DATE, 1);
-    calendar.set(Calendar.HOUR_OF_DAY, hourOfDayFinal);
-    calendar.set(Calendar.MINUTE, minuteFinal);
+    if (calendar.get(Calendar.HOUR_OF_DAY)<12) {
+        calendar.roll(Calendar.DATE, 1);
+    }
+    int hoursBefore = scrollableNumberPicker.getValue();
+    int minutesBefore = scrollableNumberPicker2.getValue();
+    calendar.set(Calendar.HOUR_OF_DAY, hourOfDayFinal + hoursBefore);
+    calendar.set(Calendar.MINUTE, minuteFinal + minutesBefore);
     calendar.set(Calendar.SECOND, 0);
     calendar.set(Calendar.MILLISECOND, 0);
     Date earliest = calendar.getTime();
@@ -404,10 +383,10 @@ public class MainActivity extends Activity
 
     public DateTime setLatest() {
     Calendar calendar = Calendar.getInstance();
-    /*Date today = calendar.getTime();
-    calendar.add(Calendar.DAY_OF_YEAR, 1);*/
     calendar.get(Calendar.DATE);
-    calendar.roll(Calendar.DATE, 1);
+        if (calendar.get(Calendar.HOUR_OF_DAY)<12) {
+            calendar.roll(Calendar.DATE, 1);
+        }
     calendar.set(Calendar.HOUR_OF_DAY, 12);
     calendar.set(Calendar.MINUTE, 0);
     calendar.set(Calendar.SECOND, 0);
@@ -423,7 +402,14 @@ public class MainActivity extends Activity
         //start up alarm manager
         AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         //set date from the finalTime gotten from calendar, subtract a certain amount
-        Date wakeUp = new Date(new DateTime(finalTime).getValue() - subtractTime);
+        Date wakeUp = null;
+        if (finalTime != null) {
+            wakeUp = new Date(new DateTime(finalTime).getValue() - subtractTime);
+        }
+        else{
+            //TODO
+        }
+        assert wakeUp != null;
         Log.d("final time", wakeUp.toString());
         Log.d("date.gettime", String.valueOf(wakeUp.getTime()));
 
@@ -431,13 +417,13 @@ public class MainActivity extends Activity
         Context context = this;
         Intent myIntent = new Intent(context, AlarmReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, myIntent, 0);
-        manager.set(AlarmManager.RTC_WAKEUP,wakeUp.getTime(), pendingIntent);
+        assert manager != null;
+        manager.set(AlarmManager.RTC_WAKEUP, wakeUp.getTime(), pendingIntent);
         sendNotification();
     }
 
     public void sendNotification () {
         //sends notifications with time for alarm
-//        DateTime finalDT = new DateTime(finalTime);
         Date finalDate = new Date(new DateTime(finalTime).getValue() - subtractTime);
         Log.d("finaldate", finalDate.toString());
         String hours = String.valueOf(finalDate.getHours());
@@ -449,14 +435,16 @@ public class MainActivity extends Activity
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
             .setContentTitle("Alarm set")
             .setContentText("An alarm has been set for " + hours + ":" + minutes)
-                .setDefaults(-1)
+            .setDefaults(-1)
             .setSmallIcon(R.drawable.common_google_signin_btn_text_light);
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(contentIntent);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
         manager.notify(0, mBuilder.build());
+        Log.d("scrollable picker", String.valueOf(scrollableNumberPicker.getValue()));
     }
 
 
@@ -464,7 +452,7 @@ public class MainActivity extends Activity
      * An asynchronous task that handles the Google Calendar API call.
      * Placing the API calls in their own task ensures the UI stays responsive.
      */
-    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
+    private  class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
         private com.google.api.services.calendar.Calendar mService = null;
         private Exception mLastError = null;
 
@@ -512,7 +500,7 @@ public class MainActivity extends Activity
             // List the next 10 events from the given calendar.
             List<String> eventStrings = new ArrayList<>();
             for (String ids : calendarIDs) {
-                Log.d("someids", ids);
+                Log.d("using calendar id", ids);
                 Events events = mService.events().list(ids)
                         .setMaxResults(10)
                         .setTimeMin(setEarliest())
@@ -551,17 +539,17 @@ public class MainActivity extends Activity
 
         @Override
         protected void onPreExecute() {
-            mOutputText.setText("");
+            ((TextView)findViewById(R.id.textView1)).setText("");
             mProgress.show();
         }
       @Override
         protected void onPostExecute(List<String> output) {
             mProgress.hide();
             if (output == null || output.size() == 0) {
-                mOutputText.setText("No results returned.");
+                ((TextView)findViewById(R.id.textView1)).setText("No results returned.");
             } else {
                 output.add(0, "Data retrieved using the Google Calendar API:");
-                mOutputText.setText(TextUtils.join("\n", output));
+                ((TextView)findViewById(R.id.textView1)).setText(TextUtils.join("\n", output));
             }
         }
 
@@ -579,11 +567,11 @@ public class MainActivity extends Activity
                             ((UserRecoverableAuthIOException) mLastError).getIntent(),
                             MainActivity.REQUEST_AUTHORIZATION);
                 } else {
-                    mOutputText.setText("The following error occurred:\n"
+                    ((TextView)findViewById(R.id.textView1)).setText("The following error occurred:\n"
                             + mLastError.getMessage());
                 }
             } else {
-                mOutputText.setText("Request cancelled.");
+                ((TextView)findViewById(R.id.textView1)).setText("Request cancelled.");
             }
         }
     }

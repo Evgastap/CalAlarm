@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">CalendarAlarm</string>
+    <string name="set_alarm">Set Alarm</string>
+    <string name="press_set_alarm_button">Press Set Alarmbutton</string>
+    <string name="get_date_time">Get Date Time</string>
+    <string name="date_time_will_be_shown_here">Date/Time will be shown here</string>
+    <string name="colon">:</string>
 </resources>

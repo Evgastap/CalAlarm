@@ -7,27 +7,86 @@
     android:padding="16dp">
 
     <Button
-        android:id="@+id/button_GetEvents"
+        android:id="@+id/b_getEvents"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:shadowColor="@color/colorPrimaryDark"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Get Events" />
+        android:text="@string/set_alarm"
+        android:textColorLink="@color/colorPrimary" />
 
-    <com.michaelmuenzer.android.scrollablennumberpicker.ScrollableNumberPicker
-        android:id="@+id/snp_horizontal"
-        android:layout_width="50dp"
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:background="@drawable/number_picker_bg"
-        android:gravity="center_vertical|center_horizontal"
-        app:snp_buttonIconLeft="@drawable/ic_left"
-        app:snp_buttonIconRight="@drawable/ic_right"
-        app:snp_maxValue="60"
-        app:snp_minValue="0"
-        app:snp_orientation="horizontal"
-        app:snp_stepSize="5"
-        app:snp_updateInterval="10"
-        app:snp_value="10"
-        app:snp_valueMarginEnd="8dp"
-        app:snp_valueMarginStart="8dp" />
+        android:text="@string/press_set_alarm_button"
+        android:textAlignment="center" />
+
+    <Button
+        android:id="@+id/b_getDateTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/get_date_time" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/date_time_will_be_shown_here"
+        android:textAlignment="center" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.michaelmuenzer.android.scrollablennumberpicker.ScrollableNumberPicker
+            android:id="@+id/snp_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:background="@drawable/number_picker_bg"
+            android:gravity="center_vertical|center_horizontal"
+            app:snp_buttonIconLeft="@drawable/ic_left"
+            app:snp_buttonIconRight="@drawable/ic_right"
+            app:snp_maxValue="12"
+            app:snp_minValue="0"
+            app:snp_orientation="horizontal"
+            app:snp_stepSize="1"
+            app:snp_updateInterval="10"
+            app:snp_value="1"
+            app:snp_valueMarginEnd="8dp"
+            app:snp_valueMarginStart="8dp" />
+
+        <TextView
+            android:id="@+id/t_colon"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/colon"
+            android:textAlignment="center" />
+
+        <com.michaelmuenzer.android.scrollablennumberpicker.ScrollableNumberPicker
+            android:id="@+id/snp_horizontal2"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:background="@drawable/number_picker_bg"
+            android:gravity="center_vertical|center_horizontal"
+            app:snp_buttonIconLeft="@drawable/ic_left"
+            app:snp_buttonIconRight="@drawable/ic_right"
+            app:snp_maxValue="60"
+            app:snp_minValue="0"
+            app:snp_orientation="horizontal"
+            app:snp_stepSize="5"
+            app:snp_updateInterval="10"
+            app:snp_value="10"
+            app:snp_valueMarginEnd="8dp"
+            app:snp_valueMarginStart="8dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
